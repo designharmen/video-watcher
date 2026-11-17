@@ -14,7 +14,7 @@ pip install -r requirements.txt        # ffmpeg ayrıca kurulu olmalı
 
 ```bash
 python -m videowatcher.watch "https://www.youtube.com/shorts/9vn-T9b-o6Q"
-python -m videowatcher.watch video.mp4 --every 2          # yerel dosya, 2 sn'de bir kare
+python -m videowatcher.watch video.mp4 --every 2          # yerel dosya, 2 sn'de bir kare (varsayılan: süreye göre 3/10/15 sn)
 python -m videowatcher.watch URL --force-whisper          # altyazı yerine Whisper
 ```
 
@@ -24,13 +24,13 @@ python -m videowatcher.watch URL --force-whisper          # altyazı yerine Whis
 |---|---|
 | `watch.md` | Kare + o aralıkta söylenenler, zaman çizelgesi halinde |
 | `frames/tXXXX.XXs.jpg` | Sahne değişimi ve sabit aralıkla alınan kareler |
-| `contact_sheet.jpg` | Tüm kareler tek görselde |
+| `contact_sheet_NN.jpg` | 20 karelik sayfalar (uzun videoda çok sayfa) |
 | `transcript.txt` | Zaman damgalı konuşma metni |
 | `meta.json` | Başlık, kanal, süre, açıklama |
 
 ## Claude ile
 
-Claude Code / Claude masaüstünde repo klasöründe: *"şu videoyu izle ve özetle: URL"* — `CLAUDE.md` Claude'a aracı çalıştırıp `watch.md`, `contact_sheet.jpg` ve kareleri okumasını söyler.
+Claude Code / Claude masaüstünde repo klasöründe: *"şu videoyu izle ve özetle: URL"* — `CLAUDE.md` Claude'a aracı çalıştırıp `watch.md`, `contact_sheet_NN.jpg` sayfalarını ve kareleri okumasını söyler.
 
 ## Nasıl çalışır
 
