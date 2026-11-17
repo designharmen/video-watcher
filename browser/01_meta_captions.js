@@ -13,7 +13,11 @@ if (v) { v.muted = true; await v.play().catch(() => {}); }
 // altyazı tercihi zaten açıksa oynatıcı isteği kendisi atar; kapatmamak için önce bekle
 for (let i = 0; i < 4 && !findCap(); i++) await sleep(500);
 if (!findCap() && tracks.length) {
-  document.querySelector('.ytp-subtitles-button, button[aria-label*="ltyaz"], button[aria-label*="aption"]')?.click();
+  // düğmeye tıklamak her zaman çalışmıyor; oynatıcı API'si güvenilir
+  const p = document.querySelector('#movie_player, #shorts-player');
+  try { p.loadModule?.('captions'); p.setOption?.('captions', 'track', { languageCode: 'en' }); } catch (e) {}
+  await sleep(1500);
+  if (!findCap()) { try { p.toggleSubtitlesOn ? p.toggleSubtitlesOn() : p.toggleSubtitles(); } catch (e) { document.querySelector('.ytp-subtitles-button')?.click(); } }
   for (let i = 0; i < 16 && !findCap(); i++) await sleep(500);
 }
 let transcript = '(altyazı yok)';
