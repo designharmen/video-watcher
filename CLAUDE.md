@@ -4,10 +4,14 @@ Kullanıcı (Haris) bir video linki ya da dosyası verdiğinde videoyu **kendin 
 
 ## Yol seçimi
 
-- **Shell'den videoya erişim varsa** (yerel makine / açık ağ): `python -m videowatcher.watch "<URL veya dosya>"` → `watched/<id>/watch.md`, `contact_sheet.jpg`, önemli `frames/*.jpg` dosyalarını oku/aç.
+- **Shell'den videoya erişim varsa** (yerel makine / açık ağ): `python -m videowatcher.watch "<URL veya dosya>"` → `watched/<id>/watch.md`, `contact_sheet_*.jpg` (20 karelik sayfalar), önemli `frames/*.jpg` dosyalarını oku/aç.
 - **Shell YouTube'a erişemiyorsa** (bulut çalışma alanı, 403): **tarayıcı modu** — uygulama içi tarayıcıda (yoksa Claude in Chrome) linki aç:
   1. `browser/01_meta_captions.js` içeriğini sayfada javascript olarak çalıştır → başlık, kanal, süre, açıklama, zaman damgalı konuşma metni.
-  2. `browser/02_contact_sheet.js` çalıştır, ekran görüntüsü al → 20 karelik zaman damgalı ızgara. Küçük yazıları okumak için `window.VW_CROP=[y,h]` ve/veya `window.VW_TIMES=[...]` ayarlayıp tekrar çalıştır (kırpılmış bant büyük görünür).
+  2. `browser/02_contact_sheet.js` çalıştır, ekran görüntüsü al → 20 karelik zaman damgalı ızgara (bir sayfa). Kare yoğunluğu:
+     - ≤ 3 dk: tek sayfa yeter.
+     - 3–20 dk: ~10 sn'de bir kare → `window.VW_FROM / VW_TO` ile 200 sn'lik pencereler, sayfa sayfa.
+     - 20 dk–2 sa: ~15 sn'de bir kare → 300 sn'lik pencereler (1 saat ≈ 12 sayfa, 240 kare). Konuşma metni ana kaynak; kareler ekranda ne gösterildiğini doğrular.
+     - Konuşmada ekrana atıf yapılan anlar ("burada görüyorsunuz", kod, tablo, repo adı) için `window.VW_TIMES=[...]` ile hedefli kareler al; küçük yazı için `window.VW_CROP=[y,h]` ile kırpıp büyüt.
   3. Bitince `document.getElementById('__vw')?.remove()`.
   - Altyazı yoksa: konuşmayı duyamadığını açıkça söyle; ekrandaki yazılar + açıklama + kareler üzerinden analiz et.
   - Instagram/TikTok/X: aynı `02` betiği sayfadaki `<video>` ile çalışır; meta için `get_page_text` kullan.
