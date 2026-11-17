@@ -74,24 +74,31 @@ def extract_frames(video: Path, out: Path, every: float, scene: float) -> list[t
     return frames
 
 
-def contact_sheet(frames: list[tuple[float, Path]], out: Path, cols: int = 6) -> Path:
+def contact_sheet(frames: list[tuple[float, Path]], out: Path, cols: int = 5, per_page: int = 20) -> list[Path]:
+    """Okunabilirlik için sayfa başına 20 kare: contact_sheet_01.jpg, _02.jpg ..."""
     from PIL import Image, ImageDraw
 
-    thumbs = [(t, Image.open(p)) for t, p in frames]
-    if not thumbs:
-        return out / "contact_sheet.jpg"
-    w = 240
-    h = int(thumbs[0][1].height * w / thumbs[0][1].width)
-    rows = math.ceil(len(thumbs) / cols)
-    sheet = Image.new("RGB", (cols * w, rows * (h + 22)), "white")
-    d = ImageDraw.Draw(sheet)
-    for i, (t, im) in enumerate(thumbs):
-        x, y = (i % cols) * w, (i // cols) * (h + 22)
-        sheet.paste(im.resize((w, h)), (x, y + 22))
-        d.text((x + 4, y + 4), f"{int(t // 60):02d}:{t % 60:05.2f}", fill="black")
-    p = out / "contact_sheet.jpg"
-    sheet.save(p, quality=85)
-    return p
+    pages = []
+    for n, start in enumerate(range(0, len(frames), per_page), 1):
+        thumbs = [(t, Image.open(p)) for t, p in frames[start:start + per_page]]
+        w = 240
+        h = int(thumbs[0][1].height * w / thumbs[0][1].width)
+        rows = math.ceil(len(thumbs) / cols)
+        sheet = Image.new("RGB", (cols * w, rows * (h + 22)), "white")
+        d = ImageDraw.Draw(sheet)
+        for i, (t, im) in enumerate(thumbs):
+            x, y = (i % cols) * w, (i // cols) * (h + 22)
+            sheet.paste(im.resize((w, h)), (x, y + 22))
+            d.text((x + 4, y + 4), f"{int(t // 3600)}:{int(t % 3600 // 60):02d}:{t % 60:05.2f}", fill="black")
+        p = out / f"contact_sheet_{n:02d}.jpg"
+        sheet.save(p, quality=85)
+        pages.append(p)
+    return pages
+
+
+def auto_every(duration: float) -> float:
+    """Süreye göre kare aralığı: ≤3 dk → 3 sn, ≤20 dk → 10 sn, daha uzun → 15 sn."""
+    return 3.0 if duration <= 180 else 10.0 if duration <= 1200 else 15.0
 
 
 # ---------- 3. Konuşma metni ----------
@@ -150,7 +157,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Videoyu kare + metin paketine çevirir (Claude'un izlemesi için).")
     ap.add_argument("source", help="YouTube/Shorts/Instagram/TikTok URL'si ya da yerel video dosyası")
     ap.add_argument("-o", "--out", default="watched", help="çıktı klasörü (varsayılan: watched/<id>)")
-    ap.add_argument("--every", type=float, default=3.0, help="en az kaç saniyede bir kare (varsayılan 3)")
+    ap.add_argument("--every", type=float, default=None, help="en az kaç saniyede bir kare (varsayılan: süreye göre 3/10/15)")
     ap.add_argument("--scene", type=float, default=0.30, help="sahne değişimi eşiği 0-1 (varsayılan 0.30)")
     ap.add_argument("--langs", default="tr,en,en-orig", help="tercih edilen altyazı dilleri")
     ap.add_argument("--whisper-model", default="small", help="faster-whisper modeli (tiny/base/small/medium/large-v3)")
@@ -164,7 +171,8 @@ def main() -> None:
 
     meta = local_video(src, out) if src.exists() else download(a.source, out, a.langs)
     video = next(out.glob("video.mp4"), None) or next(out.glob("video.*"))
-    frames = extract_frames(video, out, a.every, a.scene)
+    every = a.every or auto_every(float(meta.get("duration") or 0))
+    frames = extract_frames(video, out, every, a.scene)
     contact_sheet(frames, out)
     segs = transcript(out, video, a.whisper_model, a.force_whisper)
     p = report(out, meta, frames, segs)
